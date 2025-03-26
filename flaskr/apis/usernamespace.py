@@ -11,7 +11,7 @@ from flask_jwt_extended import jwt_required
 from flask_bcrypt import generate_password_hash, check_password_hash
 
 authorizations = {
-    "jsonWebToken": {
+    "Bearer": {
         "type": "apiKey",
         "in": "header",
         "name": "Authorization",
@@ -20,7 +20,7 @@ authorizations = {
 }
 
 api = Namespace(
-    "users",
+    "api/v1/",
     description="User related operations",
     authorizations=authorizations,
 )

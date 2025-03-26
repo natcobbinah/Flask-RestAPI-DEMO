@@ -12,6 +12,8 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_jwt_extended import JWTManager
 from flask_bcrypt import Bcrypt
+from flask_cors import CORS
+
 
 app = Flask(__name__)
 app.config.from_object("flaskr.settings")
@@ -22,12 +24,16 @@ jwt = JWTManager(app)
 bcrypt = Bcrypt(app)
 oauth = OAuth(app)
 
-#redirect url = http://127.0.0.1:5000/callback/google
+# cors
+CORS(app)
 
-# logging
+# authlib logging
 log = logging.getLogger("authlib")
 log.addHandler(logging.StreamHandler(sys.stdout))
 log.setLevel(logging.DEBUG)
+
+# cors logger
+logging.getLogger('flask_cors').level = logging.DEBUG
 
 CONF_URL = "https://accounts.google.com/.well-known/openid-configuration"
 oauth = OAuth(app)
@@ -61,7 +67,6 @@ def login():
 @app.route('/auth')
 def auth():
     token = oauth.google.authorize_access_token()
-    print(token)
     session['user'] = token['userinfo']
     return redirect('/home')
 
