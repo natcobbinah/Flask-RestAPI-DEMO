@@ -2,6 +2,9 @@
 
 A demo Rest-API flask application supporting security features in its implementation such as Flask-Bcrypt, Flask-SQLAlchemy, Flask-JWT-Extended, Flask-Limiter, Flask-OAuthlib 
 
+## Hosted link on Microsoft Azure
+https://tp-oauth2-demo-ayaagwdkcwhchqfq.canadacentral-01.azurewebsites.net/
+
 ## Sample Screenshot of working App
 
 Logged In Page
