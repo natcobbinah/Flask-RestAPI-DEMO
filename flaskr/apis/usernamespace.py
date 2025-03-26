@@ -11,7 +11,7 @@ from flask_jwt_extended import jwt_required
 from flask_bcrypt import generate_password_hash, check_password_hash
 
 authorizations = {
-    "Bearer": {
+    "jsonWebToken": {
         "type": "apiKey",
         "in": "header",
         "name": "Authorization",
@@ -106,14 +106,13 @@ class UsersList(Resource):
 @api.route("/access")
 class UserLogin(Resource):
 
-    @api.doc(security="Bearer")
+    @api.doc(security="jsonWebToken")
     @jwt_required()
-    #@api.expect(authorization_header_parser)
     def get(self):
         current_user = get_jwt_identity()
         return jsonify({"logged_in_as": current_user})
 
-    @api.doc("login")
+    @api.doc("A route to authenticate  users and return JWTs")
     @api.expect(login_user_parser)
     @api.doc(security=None)
     def post(self):
