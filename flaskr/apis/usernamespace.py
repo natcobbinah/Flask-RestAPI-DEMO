@@ -1,5 +1,5 @@
 from flask_restx import Namespace, Resource, fields
-from flask import jsonify
+from flask import jsonify, make_response, current_app
 from flask_restx import Api, Resource
 from flaskr.db import db
 from flaskr.models import User
@@ -9,6 +9,7 @@ from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask_bcrypt import generate_password_hash, check_password_hash
+from flaskr.rate_limiter import limiter
 
 authorizations = {
     "Bearer": {
@@ -57,9 +58,9 @@ authorization_header_parser.add_argument(
 
 @api.route("/users")
 class UsersList(Resource):
-
     @api.doc("list_users")
     @api.doc(security=None)
+    @limiter.limit("100/day;10/hour;1/minute")
     def get(self):
         stmt = select(User).order_by(User.id)
         users = db.session.execute(stmt).scalars().all()
@@ -84,12 +85,9 @@ class UsersList(Resource):
         email = args.get("email")
         password = args.get("password")
         verify_password = args.get("verify password")
-
         if password != verify_password:
             return jsonify({"message": "Passwords do not match"})
-
         users_count = db.session.query(User).count()
-
         user = User(
             id=users_count + 1,
             username=username,
@@ -99,13 +97,11 @@ class UsersList(Resource):
         )
         db.session.add(user)
         db.session.commit()
-
         return jsonify({"message": "User account created successfully"})
 
 
 @api.route("/access")
 class UserLogin(Resource):
-
     @api.doc(security="jsonWebToken")
     @jwt_required()
     def get(self):
@@ -119,20 +115,15 @@ class UserLogin(Resource):
         args = login_user_parser.parse_args()
         email = args.get("email")
         password = args.get("password")
-
         stmt = select(User).where(User.email == email)
         user = db.session.execute(stmt).scalar()
-
         if user is None:
             return jsonify({"message": "User not found"})
-
         # compare hash of user record retrieved password to user_input password
         if check_password_hash(user.password, password):
             access_token = create_access_token(identity=user.id)
             return jsonify({"username": user.username, "access_token": access_token})
         else:
             return jsonify({"message": "Password is incorrect"})
-    
-            
 
-        
+

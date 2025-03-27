@@ -1,18 +1,26 @@
-from flask import Flask, session, jsonify, url_for, redirect, render_template
+from flask import (
+    Flask,
+    session,
+    jsonify,
+    url_for,
+    redirect,
+    render_template,
+    make_response,
+)
 from flask_restx import Api, Resource
 from flaskr.db import db
 from flaskr.models import User
 from flask_sqlalchemy import session as sql_session
 from sqlalchemy import insert, select
 from flaskr.apis import api
+from flaskr.blueprints import bp_google_auth
 import logging
 import sys
 from authlib.integrations.flask_client import OAuth
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask_jwt_extended import JWTManager
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
+from .rate_limiter import limiter
 
 
 app = Flask(__name__)
@@ -32,19 +40,21 @@ log = logging.getLogger("authlib")
 log.addHandler(logging.StreamHandler(sys.stdout))
 log.setLevel(logging.DEBUG)
 
-# cors logger
-logging.getLogger('flask_cors').level = logging.DEBUG
 
-CONF_URL = "https://accounts.google.com/.well-known/openid-configuration"
+# cors logger
+logging.getLogger("flask_cors").level = logging.DEBUG
+
 oauth = OAuth(app)
 oauth.register(
     name="google",
-    server_metadata_url=CONF_URL,
+    server_metadata_url=app.config['GOOGLE_SERVER_METADATA_URL'],
     client_kwargs={"scope": "openid email profile"},
     client_id=app.config["GOOGLE_CLIENT_ID"],
     client_secret=app.config["GOOGLE_CLIENT_SECRET"],
 )
 
+# limiter
+limiter.init_app(app)
 
 # initialize the app with the database extension
 db.init_app(app)
@@ -52,30 +62,19 @@ db.init_app(app)
 # add the api to the app
 api.init_app(app)
 
+# add the google auth blueprint to the app
 
-@app.route('/home')
-def homepage():
-    user = session.get('user')
-    return render_template('home.html', user=user)
+app.register_blueprint(bp_google_auth)
 
-@app.route('/login')
-def login():
-    redirect_uri = url_for('auth', _external=True)
-    return oauth.google.authorize_redirect(redirect_uri)
+# update app config objects
+app.config.update(
+    {
+        "oauth": oauth,
+    }
+)
 
 
-@app.route('/auth')
-def auth():
-    token = oauth.google.authorize_access_token()
-    session['user'] = token['userinfo']
-    return redirect('/home')
-
-@app.route('/logout')
-def logout():
-    session.pop('user', None)
-    return redirect('/home')
-
-#create the table schema in the database
+# create the table schema in the database
 """ with app.app_context():
 
     db.drop_all()
