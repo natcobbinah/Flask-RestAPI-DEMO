@@ -6,7 +6,7 @@ env = Env()
 env.read_env()
 
 # Override in .env for local development
-DEBUG = env.bool("FLASK_DEBUG", default=False)
+FLASK_DEBUG = env.bool("FLASK_DEBUG", default=False)
 # SECRET_KEY is required
 SECRET_KEY = env.str("SECRET_KEY")
 SQLALCHEMY_DATABASE_URI = env.str("SQLALCHEMY_DATABASE_URI")

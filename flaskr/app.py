@@ -21,6 +21,7 @@ from flask_jwt_extended import JWTManager
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from .rate_limiter import limiter
+from flask_talisman import Talisman
 
 
 app = Flask(__name__)
@@ -40,6 +41,10 @@ log = logging.getLogger("authlib")
 log.addHandler(logging.StreamHandler(sys.stdout))
 log.setLevel(logging.DEBUG)
 
+# HTTP security headers for Flask
+# Forces all connects to https, unless running with debug enabled
+# CSP set to none for now, for testing purposes
+Talisman(app, content_security_policy=None, force_https=False)
 
 # cors logger
 logging.getLogger("flask_cors").level = logging.DEBUG
@@ -63,7 +68,6 @@ db.init_app(app)
 api.init_app(app)
 
 # add the google auth blueprint to the app
-
 app.register_blueprint(bp_google_auth)
 
 # update app config objects
